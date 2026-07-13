@@ -95,4 +95,77 @@ public class AuthController {
 
         return ResponseEntity.ok(response);
     }
+    // UPDATE PROFILE
+    @PutMapping("/update/{userId}")
+    public ResponseEntity<?> updateProfile(
+            @PathVariable Long userId,
+            @RequestBody SignUpRequest request) {
+
+        User user = userRepository.findById(userId).orElse(null);
+
+        if (user == null) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body("User not found");
+        }
+
+        // Check if new email is taken by someone else
+        User existingUser = userRepository
+                .findByEmail(request.getEmail())
+                .orElse(null);
+
+        if (existingUser != null &&
+                !existingUser.getUserId().equals(userId)) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body("Email already in use by another account");
+        }
+
+        user.setFullName(request.getFullName());
+        user.setEmail(request.getEmail());
+
+        User saved = userRepository.save(user);
+
+        AuthResponse response = new AuthResponse(
+                saved.getUserId(),
+                saved.getFullName(),
+                saved.getEmail(),
+                saved.getRole(),
+                "Profile updated successfully"
+        );
+
+        return ResponseEntity.ok(response);
+    }
+    // CHANGE PASSWORD
+    @PutMapping("/change-password/{userId}")
+    public ResponseEntity<?> changePassword(
+            @PathVariable Long userId,
+            @RequestBody java.util.Map<String, String> request) {
+
+        User user = userRepository.findById(userId).orElse(null);
+
+        if (user == null) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body("User not found");
+        }
+
+        String currentPassword = request.get("currentPassword");
+        String newPassword = request.get("newPassword");
+
+        // Verify current password
+        if (!passwordEncoder.matches(currentPassword,
+                user.getPasswordHash())) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body("Current password is incorrect");
+        }
+
+        // Update to new password
+        user.setPasswordHash(
+                passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        return ResponseEntity.ok("Password changed successfully");
+    }
 }

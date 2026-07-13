@@ -32,6 +32,8 @@ public class TouristSite {
     private Integer reviewCount;
     private String color;
     private Boolean isVerified;
+    private String imageUrl;
+    private String history;
 
     @Column(updatable = false)
     private LocalDateTime createdAt;
