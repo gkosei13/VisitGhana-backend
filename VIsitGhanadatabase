@@ -1,0 +1,131 @@
+-- ============================================
+-- VisitGhana Database Setup Script
+-- Run this in pgAdmin Query Tool on a new
+-- database called "visitghana"
+-- ============================================
+
+-- ── TABLES ──────────────────────────────────
+
+CREATE TABLE users (
+    user_id SERIAL PRIMARY KEY,
+    full_name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(20) DEFAULT 'tourist',
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE tourist_sites (
+    site_id SERIAL PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    region VARCHAR(100),
+    category VARCHAR(50),
+    description TEXT,
+    history_text TEXT,
+    latitude DECIMAL(9,6),
+    longitude DECIMAL(9,6),
+    rating DECIMAL(3,1) DEFAULT 0.0,
+    review_count INT DEFAULT 0,
+    color VARCHAR(10) DEFAULT '#1A4A6B',
+    is_verified BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE photos (
+    photo_id SERIAL PRIMARY KEY,
+    site_id INT REFERENCES tourist_sites(site_id),
+    user_id INT REFERENCES users(user_id),
+    image_url VARCHAR(500) NOT NULL,
+    caption VARCHAR(150),
+    status VARCHAR(20) DEFAULT 'pending',
+    upload_date TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE reviews (
+    review_id SERIAL PRIMARY KEY,
+    site_id INT REFERENCES tourist_sites(site_id),
+    user_id INT REFERENCES users(user_id),
+    rating INT CHECK (rating >= 1 AND rating <= 5),
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE accommodations (
+    accom_id SERIAL PRIMARY KEY,
+    site_id INT REFERENCES tourist_sites(site_id),
+    name VARCHAR(200) NOT NULL,
+    type VARCHAR(50),
+    address VARCHAR(300),
+    latitude DECIMAL(9,6),
+    longitude DECIMAL(9,6),
+    rating DECIMAL(3,1),
+    contact VARCHAR(100)
+);
+
+CREATE TABLE tickets (
+    ticket_id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(user_id),
+    site_id INT REFERENCES tourist_sites(site_id),
+    site_name VARCHAR(200),
+    adults INT DEFAULT 1,
+    children INT DEFAULT 0,
+    total_amount DECIMAL(10,2),
+    payment_reference VARCHAR(200),
+    payment_status VARCHAR(20) DEFAULT 'pending',
+    ticket_code VARCHAR(100),
+    purchase_date TIMESTAMP DEFAULT NOW()
+);
+
+-- ── SEED DATA — Tourist Sites ───────────────
+
+INSERT INTO tourist_sites 
+(name, region, category, description, history_text, 
+ latitude, longitude, rating, review_count, color, is_verified)
+VALUES
+('Cape Coast Castle', 'Central Region', 'Historical',
+ 'A UNESCO World Heritage Site and one of the most important slave castles built along the Ghanaian coast.',
+ 'Cape Coast Castle was originally built by the Swedish in 1653 as a trade lodge.',
+ 5.1054, -1.2466, 4.8, 320, '#1A4A6B', TRUE),
+('Kakum National Park', 'Central Region', 'Wildlife',
+ 'Famous for its canopy walkway suspended 30 metres above the forest floor.',
+ 'Kakum National Park was established in 1931 and upgraded to a national park in 1992.',
+ 5.3500, -1.3833, 4.7, 210, '#2D6A4F', TRUE),
+('Elmina Castle', 'Central Region', 'Historical',
+ 'The oldest European building in sub-Saharan Africa, built by the Portuguese in 1482.',
+ 'Elmina Castle was built by Portuguese explorers in 1482.',
+ 5.0849, -1.3499, 4.7, 290, '#6B1A1A', TRUE),
+('Mole National Park', 'Northern Region', 'Wildlife',
+ 'Ghana largest wildlife sanctuary, home to elephants and over 300 bird species.',
+ 'Mole National Park was established in 1971 and covers over 4800 square kilometres.',
+ 9.2617, -1.8560, 4.6, 180, '#6B4A1A', TRUE),
+('Labadi Beach', 'Greater Accra', 'Beach',
+ 'The most popular beach in Accra, known for its lively atmosphere.',
+ 'Labadi Beach has been a recreational landmark in Accra for decades.',
+ 5.5571, -0.1426, 4.3, 150, '#C0873F', TRUE),
+('Larabanga Mosque', 'Northern Region', 'Religious',
+ 'One of the oldest mosques in West Africa built in the Sudanese architectural style.',
+ 'The Larabanga Mosque is believed to have been built in 1421.',
+ 9.2317, -1.8610, 4.5, 95, '#4A1A6B', TRUE),
+('Wli Waterfalls', 'Volta Region', 'Nature',
+ 'The highest waterfall in West Africa located near the border with Togo.',
+ 'Wli Waterfalls drops 80 metres making it the tallest waterfall in West Africa.',
+ 7.1500, 0.5833, 4.8, 175, '#1A6B5A', TRUE),
+('Manhyia Palace', 'Ashanti Region', 'Cultural',
+ 'The official residence of the Asantehene the paramount chief of the Ashanti people.',
+ 'Manhyia Palace was built by the British in 1925.',
+ 6.7000, -1.6167, 4.6, 140, '#8B6914', TRUE),
+('Kintampo Waterfalls', 'Bono East Region', 'Nature',
+ 'A stunning waterfall located at the geographical centre of Ghana.',
+ 'Kintampo Waterfalls is located near the geographical centre of Ghana.',
+ 8.0500, -1.7333, 4.4, 88, '#2A6B3A', TRUE),
+('Nzulezu Stilt Village', 'Western Region', 'Cultural',
+ 'A unique village built entirely on stilts over Lake Tadane.',
+ 'Nzulezu has existed for over 500 years.',
+ 4.9833, -2.5167, 4.5, 112, '#1A5A6B', TRUE),
+('Paga Crocodile Pond', 'Upper East Region', 'Wildlife',
+ 'A sacred pond where locals and tourists interact freely with wild crocodiles.',
+ 'The Paga Crocodile Pond has been sacred to the local community for centuries.',
+ 10.9833, -1.1167, 4.3, 76, '#5A3A1A', TRUE);
+
+-- ── DONE ────────────────────────────────────
+-- Your database is ready!
