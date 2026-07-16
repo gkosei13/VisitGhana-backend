@@ -4,6 +4,8 @@ import com.visitghana.api.model.Festival;
 import com.visitghana.api.repository.FestivalRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import com.visitghana.api.model.FestivalPhoto;
+import com.visitghana.api.repository.FestivalPhotoRepository;
 
 import java.util.List;
 
@@ -23,5 +25,15 @@ public class FestivalController {
     @GetMapping("/{festivalId}")
     public Festival getFestival(@PathVariable Long festivalId) {
         return festivalRepository.findById(festivalId).orElse(null);
+    }
+
+    @Autowired
+    private FestivalPhotoRepository festivalPhotoRepository;
+
+    @GetMapping("/{festivalId}/photos")
+    public List<FestivalPhoto> getFestivalPhotos(
+            @PathVariable Long festivalId) {
+        return festivalPhotoRepository
+                .findByFestivalIdOrderByDisplayOrder(festivalId);
     }
 }
