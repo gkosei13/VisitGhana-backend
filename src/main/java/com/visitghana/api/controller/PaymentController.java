@@ -3,12 +3,15 @@ package com.visitghana.api.controller;
 import com.visitghana.api.dto.TicketRequest;
 import com.visitghana.api.dto.VerifyRequest;
 import com.visitghana.api.model.Ticket;
+import com.visitghana.api.model.User;
 import com.visitghana.api.repository.TicketRepository;
+import com.visitghana.api.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -23,6 +26,9 @@ public class PaymentController {
 
     @Autowired
     private TicketRepository ticketRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Value("${paystack.secret.key}")
     private String paystackSecretKey;
@@ -70,9 +76,23 @@ public class PaymentController {
             String authUrl =
                     (String) data.get("authorization_url");
 
+            Long resolvedUserId = request.getUserId();
+            if (resolvedUserId == null && request.getEmail() != null && !request.getEmail().isBlank()) {
+                User user = userRepository.findByEmail(request.getEmail().trim()).orElse(null);
+                if (user != null) {
+                    resolvedUserId = user.getUserId();
+                }
+            }
+
+            if (resolvedUserId == null) {
+                return ResponseEntity
+                        .status(HttpStatus.BAD_REQUEST)
+                        .body("Unable to determine the current user");
+            }
+
             // Save a pending ticket
             Ticket ticket = new Ticket();
-            ticket.setUserId(request.getUserId());
+            ticket.setUserId(resolvedUserId);
             ticket.setSiteId(request.getSiteId());
             ticket.setSiteName(request.getSiteName());
             ticket.setAdults(request.getAdults());
@@ -158,9 +178,23 @@ public class PaymentController {
     }
 
     // Get all tickets for a user
-    @GetMapping("/tickets/{userId}")
+    @GetMapping({"/tickets", "/tickets/{userId}"})
     public List<Ticket> getUserTickets(
-            @PathVariable Long userId) {
-        return ticketRepository.findByUserId(userId);
+            @PathVariable(required = false) Long userId,
+            @RequestParam(required = false) String email) {
+
+        Long resolvedUserId = userId;
+        if (resolvedUserId == null && email != null && !email.isBlank()) {
+            User user = userRepository.findByEmail(email.trim()).orElse(null);
+            if (user != null) {
+                resolvedUserId = user.getUserId();
+            }
+        }
+
+        if (resolvedUserId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User not provided");
+        }
+
+        return ticketRepository.findByUserId(resolvedUserId);
     }
 }
